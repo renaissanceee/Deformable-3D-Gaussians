@@ -26,10 +26,10 @@ import numpy as np
 import time
 
 
-def render_set(model_path, load2gpu_on_the_fly, is_6dof, name, iteration, views, gaussians, pipeline, background, deform):
-    render_path = os.path.join(model_path, name, "ours_{}".format(iteration), "renders")
-    gts_path = os.path.join(model_path, name, "ours_{}".format(iteration), "gt")
-    depth_path = os.path.join(model_path, name, "ours_{}".format(iteration), "depth")
+def render_set(model_path, load2gpu_on_the_fly, is_6dof, name, iteration, views, gaussians, pipeline, background, deform, scale):
+    render_path = os.path.join(model_path, name, "ours_{}".format(iteration), "renders_"+str(scale))
+    gts_path = os.path.join(model_path, name, "ours_{}".format(iteration), "gt_"+str(scale))
+    depth_path = os.path.join(model_path, name, "ours_{}".format(iteration), "depth_"+str(scale))
 
     makedirs(render_path, exist_ok=True)
     makedirs(gts_path, exist_ok=True)
@@ -50,9 +50,12 @@ def render_set(model_path, load2gpu_on_the_fly, is_6dof, name, iteration, views,
         depth = depth / (depth.max() + 1e-5)
 
         gt = view.original_image[0:3, :, :]
-        torchvision.utils.save_image(rendering, os.path.join(render_path, '{0:05d}'.format(idx) + ".png"))
-        torchvision.utils.save_image(gt, os.path.join(gts_path, '{0:05d}'.format(idx) + ".png"))
-        torchvision.utils.save_image(depth, os.path.join(depth_path, '{0:05d}'.format(idx) + ".png"))
+        # torchvision.utils.save_image(rendering, os.path.join(render_path, '{0:05d}'.format(idx) + ".png"))
+        # torchvision.utils.save_image(gt, os.path.join(gts_path, '{0:05d}'.format(idx) + ".png"))
+        # torchvision.utils.save_image(depth, os.path.join(depth_path, '{0:05d}'.format(idx) + ".png"))
+        torchvision.utils.save_image(rendering, os.path.join(render_path, view.image_name + ".png"))
+        torchvision.utils.save_image(gt, os.path.join(gts_path, view.image_name + ".png"))
+        torchvision.utils.save_image(depth, os.path.join(depth_path, view.image_name + ".png"))
 
     for idx, view in enumerate(tqdm(views, desc="Rendering progress")):
         fid = view.fid
@@ -69,9 +72,9 @@ def render_set(model_path, load2gpu_on_the_fly, is_6dof, name, iteration, views,
         t_end = time.time()
         t_list.append(t_end - t_start)
 
-    t = np.array(t_list[5:])
-    fps = 1.0 / t.mean()
-    print(f'Test FPS: \033[1;35m{fps:.5f}\033[0m, Num. of GS: {xyz.shape[0]}')
+    # t = np.array(t_list[5:])
+    # fps = 1.0 / t.mean()
+    # print(f'Test FPS: \033[1;35m{fps:.5f}\033[0m, Num. of GS: {xyz.shape[0]}')
 
 
 def interpolate_time(model_path, load2gpt_on_the_fly, is_6dof, name, iteration, views, gaussians, pipeline, background, deform):
@@ -121,8 +124,6 @@ def interpolate_view(model_path, load2gpt_on_the_fly, is_6dof, name, iteration, 
     view = views[idx]  # Choose a specific time for rendering
 
     render_poses = torch.stack(render_wander_path(view), 0)
-    # render_poses = torch.stack([pose_spherical(angle, -30.0, 4.0) for angle in np.linspace(-180, 180, frame + 1)[:-1]],
-    #                            0)
 
     renderings = []
     for i, pose in enumerate(tqdm(render_poses, desc="Rendering progress")):
@@ -323,12 +324,12 @@ def render_sets(dataset: ModelParams, iteration: int, pipeline: PipelineParams, 
         if not skip_train:
             render_func(dataset.model_path, dataset.load2gpu_on_the_fly, dataset.is_6dof, "train", scene.loaded_iter,
                         scene.getTrainCameras(), gaussians, pipeline,
-                        background, deform)
+                        background, deform, dataset.resolution)
 
         if not skip_test:
             render_func(dataset.model_path, dataset.load2gpu_on_the_fly, dataset.is_6dof, "test", scene.loaded_iter,
                         scene.getTestCameras(), gaussians, pipeline,
-                        background, deform)
+                        background, deform, dataset.resolution)
 
 
 if __name__ == "__main__":

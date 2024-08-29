@@ -30,7 +30,7 @@ def quaternion_multiply(q1, q2):
 
 
 def render(viewpoint_camera, pc: GaussianModel, pipe, bg_color: torch.Tensor, d_xyz, d_rotation, d_scaling, is_6dof=False,
-           scaling_modifier=1.0, override_color=None):
+           scaling_modifier=1.0, override_color=None):####
     """
     Render the scene.
 

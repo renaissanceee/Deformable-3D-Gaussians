@@ -32,7 +32,7 @@ class Embedder:
         d = self.kwargs['input_dims']
         out_dim = 0
         if self.kwargs['include_input']:
-            embed_fns.append(lambda x: x)
+            embed_fns.append(lambda x: x) # keep original
             out_dim += d
 
         max_freq = self.kwargs['max_freq_log2']
@@ -43,7 +43,7 @@ class Embedder:
         else:
             freq_bands = torch.linspace(2. ** 0., 2. ** max_freq, steps=N_freqs)
 
-        for freq in freq_bands:
+        for freq in freq_bands:# 生成频率范围
             for p_fn in self.kwargs['periodic_fns']:
                 embed_fns.append(lambda x, p_fn=p_fn, freq=freq: p_fn(x * freq))
                 out_dim += d
@@ -69,8 +69,7 @@ class DeformNetwork(nn.Module):
         self.embed_fn, xyz_input_ch = get_embedder(multires, 3)
         self.input_ch = xyz_input_ch + time_input_ch
 
-        if is_blender:
-            # Better for D-NeRF Dataset
+        if is_blender:# Better for D-NeRF Dataset
             self.time_out = 30
 
             self.timenet = nn.Sequential(
@@ -102,11 +101,11 @@ class DeformNetwork(nn.Module):
         self.gaussian_scaling = nn.Linear(W, 3)
 
     def forward(self, x, t):
-        t_emb = self.embed_time_fn(t)
+        t_emb = self.embed_time_fn(t)#[24588,1]->[24588,13]
         if self.is_blender:
-            t_emb = self.timenet(t_emb)  # better for D-NeRF Dataset
-        x_emb = self.embed_fn(x)
-        h = torch.cat([x_emb, t_emb], dim=-1)
+            t_emb = self.timenet(t_emb)  # [24588,30],better for D-NeRF Dataset
+        x_emb = self.embed_fn(x)#[24588,3]->[24588,63]
+        h = torch.cat([x_emb, t_emb], dim=-1)# [24588,63], [24588,30]
         for i, l in enumerate(self.linear):
             h = self.linear[i](h)
             h = F.relu(h)
@@ -122,8 +121,8 @@ class DeformNetwork(nn.Module):
             screw_axis = torch.cat([w, v], dim=-1)
             d_xyz = exp_se3(screw_axis, theta)
         else:
-            d_xyz = self.gaussian_warp(h)
-        scaling = self.gaussian_scaling(h)
-        rotation = self.gaussian_rotation(h)
+            d_xyz = self.gaussian_warp(h)# 256->3
+        scaling = self.gaussian_scaling(h)# 256->3
+        rotation = self.gaussian_rotation(h)# 256->4
 
         return d_xyz, rotation, scaling

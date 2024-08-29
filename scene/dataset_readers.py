@@ -277,7 +277,7 @@ def readNerfSyntheticInfo(path, white_background, eval, extension=".png"):
     if not eval:
         train_cam_infos.extend(test_cam_infos)
         test_cam_infos = []
-
+    print("train: test = ", len(train_cam_infos),len(test_cam_infos))# 200:20
     nerf_normalization = getNerfppNorm(train_cam_infos)
 
     ply_path = os.path.join(path, "points3d.ply")
@@ -297,7 +297,6 @@ def readNerfSyntheticInfo(path, white_background, eval, extension=".png"):
         pcd = fetchPly(ply_path)
     except:
         pcd = None
-
     scene_info = SceneInfo(point_cloud=pcd,
                            train_cameras=train_cam_infos,
                            test_cameras=test_cam_infos,
@@ -407,17 +406,18 @@ def readNerfiesCameras(path):
     scene_center = scene_json['center']
 
     name = path.split('/')[-2]
+    print("--> dataset_type: ", name)
     if name.startswith('vrig'):
         train_img = dataset_json['train_ids']
         val_img = dataset_json['val_ids']
         all_img = train_img + val_img
         ratio = 0.25
-    elif name.startswith('NeRF'):
+    elif name.startswith('NeRF'): # NeRF-DS???
         train_img = dataset_json['train_ids']
         val_img = dataset_json['val_ids']
         all_img = train_img + val_img
         ratio = 1.0
-    elif name.startswith('interp'):
+    elif name.startswith('interp'):#  for the interpolation experiments.
         all_id = dataset_json['ids']
         train_img = all_id[::4]
         val_img = all_id[2::4]
@@ -428,7 +428,7 @@ def readNerfiesCameras(path):
         all_img = train_img
         ratio = 0.5
 
-    train_num = len(train_img)
+    train_num = len(train_img) # -->174
 
     all_cam = [meta_json[i]['camera_id'] for i in all_img]
     all_time = [meta_json[i]['time_id'] for i in all_img]
@@ -444,8 +444,7 @@ def readNerfiesCameras(path):
         camera['position'] = camera['position'] * coord_scale
         all_cam_params.append(camera)
 
-    all_img = [f'{path}/rgb/{int(1 / ratio)}x/{i}.png' for i in all_img]
-
+    all_img = [f'{path}/rgb/{int(1 / ratio)}x/{i}.png' for i in all_img] # {path}/rgb/2x/ -->174
     cam_infos = []
     for idx in range(len(all_img)):
         image_path = all_img[idx]
@@ -479,10 +478,10 @@ def readNerfiesInfo(path, eval):
     if eval:
         train_cam_infos = cam_infos[:train_num]
         test_cam_infos = cam_infos[train_num:]
+        print("train: test = ", len(train_cam_infos),len(test_cam_infos))# 174:0
     else:
         train_cam_infos = cam_infos
         test_cam_infos = []
-
     nerf_normalization = getNerfppNorm(train_cam_infos)
 
     ply_path = os.path.join(path, "points3d.ply")

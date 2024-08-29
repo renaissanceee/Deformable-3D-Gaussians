@@ -76,7 +76,7 @@ class Scene:
                 json_cams.append(camera_to_JSON(id, cam))
             with open(os.path.join(self.model_path, "cameras.json"), 'w') as file:
                 json.dump(json_cams, file)
-
+                
         if shuffle:
             random.shuffle(scene_info.train_cameras)  # Multi-res consistent random shuffling
             random.shuffle(scene_info.test_cameras)  # Multi-res consistent random shuffling
@@ -95,10 +95,11 @@ class Scene:
             self.gaussians.load_ply(os.path.join(self.model_path,
                                                  "point_cloud",
                                                  "iteration_" + str(self.loaded_iter),
-                                                 "point_cloud.ply"),
-                                    og_number_points=len(scene_info.point_cloud.points))
+                                                 "point_cloud.ply"),og_number_points=len(scene_info.point_cloud.points))
+            print("from iteration, points:",str(self.loaded_iter), len(scene_info.point_cloud.points))
         else:
             self.gaussians.create_from_pcd(scene_info.point_cloud, self.cameras_extent)
+            # self.gaussians.load_ply("output/jumpingjacks/point_cloud/iteration_40000/point_cloud.ply")
 
     def save(self, iteration):
         point_cloud_path = os.path.join(self.model_path, "point_cloud/iteration_{}".format(iteration))
